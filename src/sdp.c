@@ -69,15 +69,15 @@ void sdp_append_opus(char* sdp) {
   sdp_append(sdp, "a=rtcp-mux");
 }
 
-void sdp_append_datachannel(char* sdp) {
+void sdp_append_datachannel(char* sdp, const char* mid) {
   sdp_append(sdp, "m=application 50712 UDP/DTLS/SCTP webrtc-datachannel");
   sdp_append(sdp, "c=IN IP4 0.0.0.0");
-  sdp_append(sdp, "a=mid:datachannel");
+  sdp_append(sdp, "a=mid:%s", mid);
   sdp_append(sdp, "a=sctp-port:5000");
   sdp_append(sdp, "a=max-message-size:262144");
 }
 
-void sdp_create(char* sdp, int b_video, int b_audio, int b_datachannel) {
+void sdp_create(char* sdp, int b_video, int b_audio, const char* datachannel) {
   char bundle[64];
   sdp_append(sdp, "v=0");
   sdp_append(sdp, "o=- 1495799811084970 1495799811084970 IN IP4 0.0.0.0");
@@ -87,6 +87,7 @@ void sdp_create(char* sdp, int b_video, int b_audio, int b_datachannel) {
 #if ICE_LITE
   sdp_append(sdp, "a=ice-lite");
 #endif
+  sdp_append(sdp, "a=ice-options:trickle");
   memset(bundle, 0, sizeof(bundle));
 
   strcat(bundle, "a=group:BUNDLE");
@@ -99,8 +100,9 @@ void sdp_create(char* sdp, int b_video, int b_audio, int b_datachannel) {
     strcat(bundle, " audio");
   }
 
-  if (b_datachannel) {
-    strcat(bundle, " datachannel");
+  if (datachannel) {
+    strcat(bundle, " ");
+    strcat(bundle, datachannel);
   }
 
   sdp_append(sdp, bundle);

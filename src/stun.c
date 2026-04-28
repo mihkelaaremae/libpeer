@@ -175,6 +175,9 @@ void stun_parse_msg_buf(StunMessage* msg) {
         }
 
         break;
+      case STUN_ATTR_TYPE_ERROR:
+        LOGE("STUN Error: %.*s", ntohs(attr->length) - 4 , (char *)attr->value + 4);
+        break;
       case STUN_ATTR_TYPE_LIFETIME:
         break;
       case STUN_ATTR_TYPE_REALM:

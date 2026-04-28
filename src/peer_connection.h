@@ -119,11 +119,17 @@ int peer_connection_send_video(PeerConnection* pc, const uint8_t* packet, size_t
 
 void peer_connection_set_remote_description(PeerConnection* pc, const char* sdp, SdpType sdp_type);
 
+void peer_connection_set_remote_candidates(PeerConnection* pc, const char* candidates);
+
 void peer_connection_set_local_description(PeerConnection* pc, const char* sdp, SdpType sdp_type);
 
 const char* peer_connection_create_offer(PeerConnection* pc);
 
 const char* peer_connection_create_answer(PeerConnection* pc);
+
+const char* peer_connection_create_candidates(PeerConnection* pc);
+
+void peer_connection_start_checking(PeerConnection* pc);
 
 /**
  * @brief register callback function to handle packet loss from RTCP receiver report

@@ -11,7 +11,7 @@
 #define MDNS_GROUP "224.0.0.251"
 #define MDNS_PORT 5353
 
-typedef struct DnsHeader {
+typedef struct __attribute__((packed)) DnsHeader {
   uint16_t id;
   uint16_t flags;
   uint16_t qestions;
@@ -20,7 +20,7 @@ typedef struct DnsHeader {
   uint16_t additional_rrs;
 } DnsHeader;
 
-typedef struct DnsAnswer {
+typedef struct __attribute__((packed)) DnsAnswer {
   uint16_t type;
   uint16_t class;
   uint32_t ttl;
@@ -28,7 +28,7 @@ typedef struct DnsAnswer {
   uint8_t data[0];
 } DnsAnswer;
 
-typedef struct DnsQuery {
+typedef struct __attribute__((packed)) DnsQuery {
   uint16_t type;
   uint16_t class;
 } DnsQuery;
@@ -81,12 +81,14 @@ static int mdns_parse_answer(uint8_t* buf, int size, Address* addr, const char* 
 
   answer = (DnsAnswer*)(buf + offset);
   LOGD("type: %" PRIu16 ", class: %" PRIu16 ", ttl: %" PRIu32 ", length: %" PRIu16 "", ntohs(answer->type), ntohs(answer->class), ntohl(answer->ttl), ntohs(answer->length));
-  if (ntohs(answer->length) != 4) {
-    LOGI("invalid length");
-    return -1;
+  if (ntohs(answer->type) == 1 && ntohs(answer->length) == 4) {
+    // Type A Record
+    memcpy(&addr->sin.sin_addr, answer->data, 4);
+  } else if (ntohs(answer->type) == 28 && ntohs(answer->length) == 16) {
+    // Type AAAA record
+    memcpy(&addr->sin6.sin6_addr, answer->data, 16);
+    addr_set_family(addr, AF_INET6);
   }
-
-  memcpy(&addr->sin.sin_addr, answer->data, 4);
   return 0;
 }
 
@@ -97,7 +99,6 @@ static int mdns_build_query(const char* hostname, uint8_t* buf, int size) {
 
   total_size = sizeof(DnsHeader) + strlen(hostname) + sizeof(DnsQuery) + 2;
   if (size < total_size) {
-    printf("buf size is not enough");
     return -1;
   }
 
@@ -120,7 +121,7 @@ int mdns_resolve_addr(const char* hostname, Address* addr) {
   UdpSocket udp_socket;
   uint8_t buf[256];
   char addr_string[ADDRSTRLEN];
-  struct timeval tv = {1, 0};
+  struct timeval tv;
   fd_set rfds;
   int maxfd, send_retry, recv_retry, size, ret;
 
@@ -144,6 +145,8 @@ int mdns_resolve_addr(const char* hostname, Address* addr) {
     udp_socket_sendto(&udp_socket, &mcast_addr, buf, size);
     for (recv_retry = 5; recv_retry > 0; recv_retry--) {
       FD_SET(udp_socket.fd, &rfds);
+      // Linux may override tv in the select function, just reset it every time
+      tv = (struct timeval){0, 300 * 1000};
       ret = select(maxfd + 1, &rfds, NULL, NULL, &tv);
 
       if (ret < 0) {

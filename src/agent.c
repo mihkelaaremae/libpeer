@@ -410,11 +410,26 @@ void agent_set_remote_description(Agent* agent, char* description) {
   while ((line_end = strstr(line_start, "\r\n")) != NULL) {
     if (strncmp(line_start, "a=ice-ufrag:", strlen("a=ice-ufrag:")) == 0) {
       strncpy(agent->remote_ufrag, line_start + strlen("a=ice-ufrag:"), line_end - line_start - strlen("a=ice-ufrag:"));
-
     } else if (strncmp(line_start, "a=ice-pwd:", strlen("a=ice-pwd:")) == 0) {
       strncpy(agent->remote_upwd, line_start + strlen("a=ice-pwd:"), line_end - line_start - strlen("a=ice-pwd:"));
+    }
+    line_start = line_end + 2;
+  }
 
-    } else if (strncmp(line_start, "a=candidate:", strlen("a=candidate:")) == 0) {
+  LOGD("remote ufrag: %s", agent->remote_ufrag);
+  LOGD("remote upwd: %s", agent->remote_upwd);
+}
+
+void agent_set_remote_candidates(Agent* agent, char* candidates) {
+  int i;
+
+  LOGD("Set remote candidates:\n%s", candidates);
+
+  char* line_start = candidates;
+  char* line_end = NULL;
+
+  while ((line_end = strstr(line_start, "\r\n")) != NULL) {
+    if (strncmp(line_start, "a=candidate:", strlen("a=candidate:")) == 0) {
       if (ice_candidate_from_description(&agent->remote_candidates[agent->remote_candidates_count], line_start, line_end) == 0) {
         for (i = 0; i < agent->remote_candidates_count; i++) {
           if (strcmp(agent->remote_candidates[i].foundation, agent->remote_candidates[agent->remote_candidates_count].foundation) == 0) {
@@ -426,12 +441,8 @@ void agent_set_remote_description(Agent* agent, char* description) {
         }
       }
     }
-
     line_start = line_end + 2;
   }
-
-  LOGD("remote ufrag: %s", agent->remote_ufrag);
-  LOGD("remote upwd: %s", agent->remote_upwd);
 }
 
 void agent_update_candidate_pairs(Agent* agent) {

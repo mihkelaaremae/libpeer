@@ -189,7 +189,7 @@ void sctp_parse_data_channel_open(Sctp* sctp, uint16_t sid, char* data, size_t l
     label_str[label_length] = '\0';
 
     // Log or process the DATA_CHANNEL_OPEN message
-    printf("DATA_CHANNEL_OPEN: Label=%s, sid=%d\n", label_str, sid);
+    LOGD("DATA_CHANNEL_OPEN: Label=%s, sid=%d\n", label_str, sid);
 
     // Add stream mapping
     sctp_add_stream_mapping(sctp, label_str, sid);
