@@ -16,7 +16,7 @@ if (DEFINED ENV{IDF_PATH})
   return()
 endif()
 
-project(peer)
+project(peer VERSION 0.0.1)
 
 option(ENABLE_TESTS "Enable tests" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
@@ -27,9 +27,8 @@ option(UNDEFINED_BEHAVIOR_SANITIZER "Build with UndefinedBehaviorSanitizer." OFF
 
 include(ExternalProject)
 
-include_directories(${CMAKE_BINARY_DIR}/dist/include ${CMAKE_BINARY_DIR}/dist/include/cjson)
-
-link_directories(${CMAKE_BINARY_DIR}/dist/lib)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/dist/include ${CMAKE_CURRENT_BINARY_DIR}/dist/include/cjson)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/dist/lib)
 
 set(DEP_LIBS "srtp2" "usrsctp" "mbedtls" "mbedcrypto" "mbedx509" "cjson")
 # Extended debug information (symbols, source code, and macro definitions)
@@ -61,50 +60,49 @@ endif()
 
 add_definitions("-Wunused-variable -Werror=sequence-point -Werror=pointer-sign -Werror=return-type -Werror=sizeof-pointer-memaccess -Wincompatible-pointer-types -DHTTP_DO_NOT_USE_CUSTOM_CONFIG -DMQTT_DO_NOT_USE_CUSTOM_CONFIG")
 
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include/mbedtls/mbedtls_config.h INPUT_CONTENT)
+string(REPLACE "//#define MBEDTLS_SSL_DTLS_SRTP" "#define MBEDTLS_SSL_DTLS_SRTP" MODIFIED_CONTENT ${INPUT_CONTENT})
+file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include/mbedtls/mbedtls_config.h ${MODIFIED_CONTENT})
+
+option(ENABLE_CJSON_UNINSTALL OFF)
+option(ENABLE_LOCALES OFF)
+option(ENABLE_CJSON_TEST OFF)
+option(BUILD_SHARED_LIBS OFF)
+option(ENABLE_TESTING OFF)
+option(ENABLE_PROGRAMS OFF)
+option(TEST_APPS OFF)
+option(sctp_build_programs OFF)
+
+add_subdirectory(third_party/cJSON)
+add_subdirectory(third_party/mbedtls)
+add_subdirectory(third_party/libsrtp)
+add_subdirectory(third_party/usrsctp)
+
+target_compile_options(srtp2 PRIVATE -fPIC -w)
+target_compile_options(usrsctp PRIVATE -fPIC -w)
+target_compile_options(mbedtls PRIVATE -fPIC -w)
+target_compile_options(mbedcrypto PRIVATE -fPIC -w)
+target_compile_options(mbedx509 PRIVATE -fPIC -w)
+
+set_target_properties(srtp2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "") 
+set_target_properties(usrsctp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "") 
+target_include_directories(srtp2 PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/libsrtp/include/>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/libsrtp/crypto/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
+  )
+target_include_directories(usrsctp PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/usrsctp/usrsctplib>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
+  )
+target_include_directories(cjson PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/cJSON/>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
+  )
+
 add_subdirectory(src)
 add_subdirectory(examples)
 
 if(ENABLE_TESTS)
   add_subdirectory(tests)
 endif()
-
-ExternalProject_Add(cjson
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cJSON
-  CMAKE_ARGS
-    -DCMAKE_C_FLAGS="-fPIC"
-    -DBUILD_SHARED_LIBS=off
-    -DENABLE_CJSON_TEST=off
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dist
-    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-)
-
-ExternalProject_Add(mbedtls
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls
-  CMAKE_ARGS
-    -DCMAKE_C_FLAGS="-fPIC"
-    -DENABLE_TESTING=off
-    -DENABLE_PROGRAMS=off
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dist
-    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-)
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include/mbedtls/mbedtls_config.h INPUT_CONTENT)
-string(REPLACE "//#define MBEDTLS_SSL_DTLS_SRTP" "#define MBEDTLS_SSL_DTLS_SRTP" MODIFIED_CONTENT ${INPUT_CONTENT})
-file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include/mbedtls/mbedtls_config.h ${MODIFIED_CONTENT})
-
-ExternalProject_Add(srtp2
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/libsrtp
-  CMAKE_ARGS
-    -DCMAKE_C_FLAGS="-fPIC"
-    -DTEST_APPS=off
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dist
-    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-)
-
-ExternalProject_Add(usrsctp
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/usrsctp
-  CMAKE_ARGS
-    -DCMAKE_C_FLAGS="-fPIC"
-    -Dsctp_build_programs=off
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/dist
-    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-)

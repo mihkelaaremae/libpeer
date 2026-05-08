@@ -18,7 +18,7 @@ include_directories(peer PUBLIC
 
 add_dependencies(peer cjson mbedtls usrsctp srtp2)
 
-target_link_libraries(peer ${DEP_LIBS})
+target_link_libraries(peer ${DEP_LIBS} srtp2)
 
 set_target_properties(peer PROPERTIES PUBLIC_HEADER "${HEADERS}")
 
@@ -27,3 +27,12 @@ install(TARGETS peer
   PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/
 )
 
+install(EXPORT peer DESTINATION lib/cmake/peer FILE peerConfig.cmake)
+install(FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/../include/peer.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../include/peer_connection.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/../include/peer_signaling.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include/)
+install(TARGETS ${DEP_LIBS} EXPORT peer
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
