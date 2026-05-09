@@ -64,6 +64,7 @@ file(READ ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include/mbedtls/mbedtl
 string(REPLACE "//#define MBEDTLS_SSL_DTLS_SRTP" "#define MBEDTLS_SSL_DTLS_SRTP" MODIFIED_CONTENT ${INPUT_CONTENT})
 file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/mbedtls/include/mbedtls/mbedtls_config.h ${MODIFIED_CONTENT})
 
+option(LIBSRTP_TEST_APPS OFF)
 option(ENABLE_CJSON_UNINSTALL OFF)
 option(ENABLE_LOCALES OFF)
 option(ENABLE_CJSON_TEST OFF)
