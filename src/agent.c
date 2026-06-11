@@ -57,7 +57,7 @@ void agent_destroy(Agent* agent) {
 #endif
 }
 
-static int agent_socket_recv(Agent* agent, Address* addr, uint8_t* buf, int len) {
+static int agent_socket_recv(Agent* agent, Address* addr, uint8_t* buf, int len, int timeout) {
   int ret = -1;
   int i = 0;
   int maxfd = -1;
@@ -70,7 +70,7 @@ static int agent_socket_recv(Agent* agent, Address* addr, uint8_t* buf, int len)
   };
 
   tv.tv_sec = 0;
-  tv.tv_usec = AGENT_POLL_TIMEOUT * 1000;
+  tv.tv_usec = timeout * 1000;
   FD_ZERO(&rfds);
 
   for (i = 0; i < sizeof(addr_type) / sizeof(addr_type[0]); i++) {
@@ -104,7 +104,7 @@ static int agent_socket_recv_attempts(Agent* agent, Address* addr, uint8_t* buf,
   int ret = -1;
   int i = 0;
   for (i = 0; i < maxtimes; i++) {
-    if ((ret = agent_socket_recv(agent, addr, buf, len)) != 0) {
+    if ((ret = agent_socket_recv(agent, addr, buf, len, AGENT_POLL_TIMEOUT)) != 0) {
       break;
     }
   }
@@ -373,7 +373,7 @@ int agent_recv(Agent* agent, uint8_t* buf, int len) {
   int ret = -1;
   StunMessage stun_msg;
   Address addr;
-  if ((ret = agent_socket_recv(agent, &addr, buf, len)) > 0 && stun_probe(buf, len) == 0) {
+  if ((ret = agent_socket_recv(agent, &addr, buf, len, 0)) > 0 && stun_probe(buf, len) == 0) {
     memcpy(stun_msg.buf, buf, ret);
     stun_msg.size = ret;
     stun_parse_msg_buf(&stun_msg);
