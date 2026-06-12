@@ -180,6 +180,8 @@ int sctp_is_connected(Sctp* sctp);
 
 void sctp_incoming_data(Sctp* sctp, char* buf, size_t len);
 
+void sctp_add_stream_mapping(Sctp* sctp, const char* label, uint16_t sid);
+
 int sctp_outgoing_data(Sctp* sctp, char* buf, size_t len, SctpDataPpid ppid, uint16_t sid);
 
 void sctp_onmessage(Sctp* sctp, void (*onmessage)(char* msg, size_t len, void* userdata, uint16_t sid));

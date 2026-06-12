@@ -11,9 +11,9 @@ extern "C" {
 
 int peer_signaling_connect(const char* url, const char* token, PeerConnection* pc);
 
-void peer_signaling_disconnect();
+void peer_signaling_disconnect(void);
 
-int peer_signaling_loop();
+int peer_signaling_loop(void);
 
 #endif  // DISABLE_PEER_SIGNALING
 
