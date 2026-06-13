@@ -68,7 +68,7 @@ static int peer_connection_dtls_srtp_recv(void* ctx, unsigned char* buf, size_t 
   }
 
   while (recv_max < CONFIG_TLS_READ_TIMEOUT && pc->state == PEER_CONNECTION_CONNECTED) {
-    ret = agent_recv(&pc->agent, buf, len);
+    ret = agent_recv_blocking(&pc->agent, buf, len);
 
     if (ret > 0) {
       break;

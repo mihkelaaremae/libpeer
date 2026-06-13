@@ -395,9 +395,17 @@ static int dtls_srtp_handshake_server(DtlsSrtp* dtls_srtp) {
   while (1) {
     unsigned char client_ip[] = "test";
 
-    mbedtls_ssl_session_reset(&dtls_srtp->ssl);
+    ret = mbedtls_ssl_session_reset(&dtls_srtp->ssl);
 
-    mbedtls_ssl_set_client_transport_id(&dtls_srtp->ssl, client_ip, sizeof(client_ip));
+    if (ret != 0) {
+      LOGE("failed! mbedtls_ssl_session_reset returned -0x%.4x", (unsigned int)-ret);
+    }
+
+    ret = mbedtls_ssl_set_client_transport_id(&dtls_srtp->ssl, client_ip, sizeof(client_ip));
+
+    if (ret != 0) {
+      LOGE("failed! mbedtls_ssl_set_client_transport_id returned -0x%.4x", (unsigned int)-ret);
+    }
 
     ret = dtls_srtp_do_handshake(dtls_srtp);
 

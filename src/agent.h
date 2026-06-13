@@ -82,6 +82,8 @@ int agent_send(Agent* agent, const uint8_t* buf, int len);
 
 int agent_recv(Agent* agent, uint8_t* buf, int len);
 
+int agent_recv_blocking(Agent* agent, uint8_t* buf, int len);
+
 void agent_set_remote_description(Agent* agent, char* description);
 
 void agent_set_remote_candidates(Agent* agent, char* candidates);

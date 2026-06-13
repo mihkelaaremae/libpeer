@@ -394,6 +394,31 @@ int agent_recv(Agent* agent, uint8_t* buf, int len) {
   return ret;
 }
 
+int agent_recv_blocking(Agent* agent, uint8_t* buf, int len) {
+  int ret = -1;
+  StunMessage stun_msg;
+  Address addr;
+  if ((ret = agent_socket_recv(agent, &addr, buf, len, AGENT_POLL_TIMEOUT)) > 0 && stun_probe(buf, len) == 0) {
+    memcpy(stun_msg.buf, buf, ret);
+    stun_msg.size = ret;
+    stun_parse_msg_buf(&stun_msg);
+    switch (stun_msg.stunclass) {
+      case STUN_CLASS_REQUEST:
+        agent_process_stun_request(agent, &stun_msg, &addr);
+        break;
+      case STUN_CLASS_RESPONSE:
+        agent_process_stun_response(agent, &stun_msg);
+        break;
+      case STUN_CLASS_ERROR:
+        break;
+      default:
+        break;
+    }
+    ret = 0;
+  }
+  return ret;
+}
+
 void agent_set_remote_description(Agent* agent, char* description) {
   /*
   a=ice-ufrag:Iexb
