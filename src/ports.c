@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -7,11 +6,18 @@
 #include "config.h"
 
 #if CONFIG_USE_LWIP
+#include <errno.h>
 #include "lwip/ip_addr.h"
 #include "lwip/netdb.h"
 #include "lwip/netif.h"
 #include "lwip/sys.h"
+#elif _WIN32
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#define errno WSAGetLastError()
 #else
+#include <errno.h>
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netdb.h>
@@ -51,6 +57,56 @@ int ports_get_host_addr(Address* addr, const char* iface_prefix) {
       break;
     }
   }
+#elif _WIN32
+  /*static char name[512];
+  if (gethostname(name, sizeof(name))) {
+    return -1;
+  }
+  const struct hostent *host_info = gethostbyname(name);
+  if (host_info) {
+    for (int i = 0; host_info->h_addr_list[i]; i++) {
+      const struct in_addr *address = (struct in_addr *)host_info->h_addr_list[i];
+      if (addr->family == address->family) {        
+        memcpy(&addr->sin.sin_addr, address, sizeof(*address));
+        ret = 1;
+        break;
+      }
+    }
+  }*/
+
+  char hostname[512];
+  if (gethostname(hostname, sizeof(hostname))) {
+    return -1;
+  }
+
+  struct addrinfo *result = NULL;
+  struct addrinfo *ptr = NULL;
+  struct addrinfo hints;
+  memset(&hints, 0, sizeof(hints));
+
+  hints.ai_family = addr->family;
+  hints.ai_socktype = SOCK_DGRAM;
+  hints.ai_protocol = IPPROTO_UDP;
+  ret = getaddrinfo(hostname, NULL, &hints, &result);
+  if (ret != 0) {
+      return 1;
+  }
+  for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
+    switch (ptr->ai_family) {
+    default:
+    case AF_INET:
+      memcpy(&addr->sin.sin_addr, &((struct sockaddr_in *)ptr->ai_addr)->sin_addr, 4);
+      break;
+    case AF_INET6:
+      memcpy(&addr->sin6.sin6_addr, &((struct sockaddr_in6 *)ptr->ai_addr)->sin6_addr, 16);
+      break;
+    }
+    ret = 1;
+    break;
+  }
+
+  freeaddrinfo(result);
+
 #else
 
   struct ifaddrs *ifaddr, *ifa;

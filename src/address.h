@@ -5,8 +5,15 @@
 #if CONFIG_USE_LWIP
 #include <lwip/sockets.h>
 #else
+#ifndef _WIN32
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#else
+#include <winsock2.h>
+#include <ws2ipdef.h>
+#include <ws2tcpip.h>
+#define INET6_ADDRSTRLEN 65
+#endif
 #endif
 #include <stdint.h>
 
@@ -30,7 +37,5 @@ int addr_inet_validate(const char* ipv4, size_t len, Address* addr);
 int addr_to_string(const Address* addr, char* buf, size_t len);
 
 int addr_from_string(const char* str, Address* addr);
-
-int addr_equal(const Address* a, const Address* b);
 
 #endif  // ADDRESS_H_

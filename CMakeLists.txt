@@ -79,6 +79,7 @@ add_subdirectory(third_party/mbedtls)
 add_subdirectory(third_party/libsrtp)
 add_subdirectory(third_party/usrsctp)
 
+target_compile_options(cjson PRIVATE -w)
 target_compile_options(srtp2 PRIVATE -fPIC -w)
 target_compile_options(usrsctp PRIVATE -fPIC -w)
 target_compile_options(mbedtls PRIVATE -fPIC -w)

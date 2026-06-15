@@ -6,6 +6,10 @@
 #define __LITTLE_ENDIAN 1234
 #elif __APPLE__
 #include <machine/endian.h>
+#elif _WIN32
+//#include "portable_endian.h"
+#define __BYTE_ORDER 1234
+#define __LITTLE_ENDIAN 1234
 #else
 #include <endian.h>
 #endif

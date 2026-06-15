@@ -8,10 +8,16 @@
 void addr_set_family(Address* addr, int family) {
   switch (family) {
     case AF_INET6:
+      if (addr->family == AF_INET) {
+        addr->sin6.sin6_port = addr->sin.sin_port;
+      }
       addr->family = AF_INET6;
       break;
     case AF_INET:
     default:
+      if (addr->family == AF_INET6) {
+        addr->sin6.sin6_port = addr->sin.sin_port;
+      }
       addr->family = AF_INET;
       break;
   }
@@ -51,9 +57,4 @@ int addr_to_string(const Address* addr, char* buf, size_t len) {
       return inet_ntop(AF_INET, &addr->sin.sin_addr, buf, len) != NULL;
   }
   return 0;
-}
-
-int addr_equal(const Address* a, const Address* b) {
-  // TODO
-  return 1;
 }

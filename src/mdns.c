@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef _WIN32
 #include <sys/select.h>
+#else
+#include <winsock2.h>
+#endif
 #include <unistd.h>
 #include "address.h"
 #include "socket.h"

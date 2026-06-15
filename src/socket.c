@@ -1,4 +1,9 @@
+#ifdef _WIN32
+#include <windows.h>
+#define errno WSAGetLastError()
+#else
 #include <errno.h>
+#endif
 #include <string.h>
 #include <unistd.h>
 
@@ -36,7 +41,7 @@ int udp_socket_open(UdpSocket* udp_socket, int family, int port) {
   udp_socket->bind_addr.family = family;
   switch (family) {
     case AF_INET6:
-      udp_socket->fd = socket(AF_INET6, SOCK_DGRAM, 0);
+      udp_socket->fd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
       udp_socket->bind_addr.sin6.sin6_family = AF_INET6;
       udp_socket->bind_addr.sin6.sin6_port = htons(port);
       udp_socket->bind_addr.sin6.sin6_addr = in6addr_any;
@@ -46,7 +51,7 @@ int udp_socket_open(UdpSocket* udp_socket, int family, int port) {
       break;
     case AF_INET:
     default:
-      udp_socket->fd = socket(AF_INET, SOCK_DGRAM, 0);
+      udp_socket->fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
       udp_socket->bind_addr.sin.sin_family = AF_INET;
       udp_socket->bind_addr.sin.sin_port = htons(port);
       udp_socket->bind_addr.sin.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -70,7 +75,7 @@ int udp_socket_open(UdpSocket* udp_socket, int family, int port) {
       break;
     }
 
-    if (getsockname(udp_socket->fd, sa, &sock_len) < 0) {
+    if ((ret = getsockname(udp_socket->fd, sa, &sock_len)) < 0) {
       LOGE("Get socket info failed");
       break;
     }
@@ -96,7 +101,11 @@ int udp_socket_open(UdpSocket* udp_socket, int family, int port) {
 
 void udp_socket_close(UdpSocket* udp_socket) {
   if (udp_socket->fd > 0) {
+#ifdef _WIN32
+    closesocket(udp_socket->fd);
+#else
     close(udp_socket->fd);
+#endif
   }
 }
 
@@ -113,12 +122,14 @@ int udp_socket_sendto(UdpSocket* udp_socket, Address* addr, const uint8_t* buf, 
   switch (addr->family) {
     case AF_INET6:
       addr->sin6.sin6_family = AF_INET6;
+      addr->sin6.sin6_port = htons(addr->port);
       sa = (struct sockaddr*)&addr->sin6;
       sock_len = sizeof(struct sockaddr_in6);
       break;
     case AF_INET:
     default:
       addr->sin.sin_family = AF_INET;
+      addr->sin.sin_port = htons(addr->port);
       sa = (struct sockaddr*)&addr->sin;
       sock_len = sizeof(struct sockaddr_in);
       break;
